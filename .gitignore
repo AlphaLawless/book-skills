@@ -1,2 +1,7 @@
 books
 study
+
+# Python runtime cache (auto-generated, never needed in git)
+__pycache__/
+*.pyc
+*.pyo
