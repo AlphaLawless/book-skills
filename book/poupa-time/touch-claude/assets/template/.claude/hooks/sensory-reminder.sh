@@ -52,7 +52,7 @@ FRESH="${FRESH:-3600}"
 if [ "$REQUIRED" = "true" ]; then
   if visual_evidence_ok "$ART_DIR" "$FRESH"; then
     MSG="Visual validation: structured evidence found in ${ART_DIR} (markdown note + referenced image, both fresh). Confirm to the user which UI diff the evidence validates."
-    jq -n --arg m "$MSG" '{hookSpecificOutput: {hookEventName: "Stop", additionalContext: $m}}'
+    jq -n --arg m "$MSG" '{systemMessage: $m}'
     exit 0
   fi
 
@@ -63,5 +63,5 @@ fi
 
 # Reminder mode (default, advisory)
 MSG="UI files changed (${UI_CHANGED}). Before marking complete: (1) build and render the change, (2) capture a screenshot (see ./.agent-md/bin/playwright-capture.sh), (3) write a markdown note next to it that references the image filename and records Changed files, Route or URL, Viewport, Artifact, and Observed result, (4) have it reviewed by an independent verifier. Do not self-grade. (Set [visual] required = true in agent-md.toml to turn this into a hard block.)"
-jq -n --arg m "$MSG" '{hookSpecificOutput: {hookEventName: "Stop", additionalContext: $m}}'
+jq -n --arg m "$MSG" '{systemMessage: $m}'
 exit 0

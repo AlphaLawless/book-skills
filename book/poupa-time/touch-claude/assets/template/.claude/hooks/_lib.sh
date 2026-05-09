@@ -52,6 +52,33 @@ file_size() {
   stat -c %s "$1" 2>/dev/null || stat -f %z "$1" 2>/dev/null
 }
 
+# compact_errors <max_lines> — stdin pipeline filter.
+# Strips ANSI escapes, drops progress/decoration lines, keeps signal
+# (compiler errors, lint rule headers, parse/format diags, Failed:).
+# Caps to <max_lines>; appends "...N more lines" footer if truncated.
+# Falls back to head -<max_lines> if filtering yields nothing (defensive).
+compact_errors() {
+  local max="${1:-10}"
+  local raw filtered count
+  raw=$(sed -E 's/\x1b\[[0-9;]*[a-zA-Z]//g; s/[[:space:]]*[━─]+[[:space:]]*$//; s/[[:space:]]+FIXABLE[[:space:]]*$//' \
+        | grep -vE '^[[:space:]]*$' \
+        | grep -vE '^(•|Tasks:|Cached:|Time:|  Time:|  Tasks:|  Cached:)' \
+        | grep -vE '(cache miss|cache hit|replaying logs|executing |Remote caching)' \
+        | grep -vE '^[[:space:]]+i [A-Z]|^[[:space:]]*[0-9]+[[:space:]]+│|^[[:space:]]*>[[:space:]]+[0-9]+ │|^[[:space:]]+│|^[[:space:]]*\.+ │|Safe fix:|Unsafe fix:' \
+        | grep -vE '^[[:space:]]*[━─]+[[:space:]]*$|^FIXABLE[[:space:]]*$')
+  filtered=$(echo "$raw" | grep -E '(error TS[0-9]+|error:|warning:|FAIL|×|✖|lint/|assist/|parse|format|^Failed:|^.*:[0-9]+:[0-9]+[[:space:]]|^[^[:space:]].*\.(ts|tsx|js|jsx|mjs|cjs|json|css|svelte|vue|astro|py|rs|go))')
+  if [ -z "$filtered" ]; then
+    filtered=$(echo "$raw" | head -n "$max")
+  fi
+  count=$(echo "$filtered" | grep -c .)
+  if [ "$count" -gt "$max" ]; then
+    echo "$filtered" | head -n "$max"
+    echo "... $((count - max)) more line(s) (re-run command to see all)"
+  else
+    echo "$filtered"
+  fi
+}
+
 # detect_pm — prints the detected Node package manager based on lockfile,
 # or nothing. Order: pnpm > yarn > bun > npm > (nothing).
 detect_pm() {

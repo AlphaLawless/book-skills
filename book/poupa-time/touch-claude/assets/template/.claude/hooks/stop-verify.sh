@@ -48,7 +48,7 @@ run_check() {
   # shellcheck disable=SC2181
   if [ $? -ne 0 ]; then
     ERRORS="${ERRORS}${label} FAILED:
-$(echo "$OUT" | head -30)
+$(echo "$OUT" | compact_errors 12)
 
 "
   fi
@@ -107,7 +107,7 @@ if [ -n "$ERRORS" ]; then
 fi
 
 if [ "$CHECKS_RUN" -eq 0 ]; then
-  jq -n '{hookSpecificOutput: {hookEventName: "Stop", additionalContext: "No type-checker, linter, or test suite detected. Task completion is unverified. State this to the user, or add an agent-md.toml to declare verification commands."}}'
+  jq -n '{systemMessage: "No type-checker, linter, or test suite detected. Task completion is unverified. State this to the user, or add an agent-md.toml to declare verification commands."}'
   exit 0
 fi
 
